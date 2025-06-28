@@ -1,5 +1,6 @@
 package com.si.gymmanager.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.si.gymmanager.common.Result
@@ -16,30 +17,45 @@ class ViewModel @Inject constructor(
     private val repository: Repository
 ) : ViewModel() {
 
-    val addMember = MutableStateFlow(AddMemberState())
-    private val _addMember = addMember.asStateFlow()
 
-     fun addMember(userDataModel: UserDataModel) {
+
+    private val _addMember = MutableStateFlow(AddMemberState())
+    val addMember = _addMember.asStateFlow()
+
+    private val _allMembers = MutableStateFlow(MembersState())
+    val allMembers = _allMembers.asStateFlow()
+
+    init {
+        getAllMembers()
+    }
+
+    fun addMember(userDataModel: UserDataModel, imageUri: Uri? = null) {
         viewModelScope.launch {
-            repository.addMembersDetails(userDataModel).collect {
-                when (it) {
+            repository.addMembersDetails(userDataModel, imageUri).collect { result ->
+                when (result) {
                     is Result.success -> {
-                        addMember.value = addMember.value.copy(
+                        _addMember.value = _addMember.value.copy(
                             isLoading = false,
-                            isSuccess = it.data.toString()
+                            isSuccess = result.data.toString(),
+                            error = ""
                         )
+                        // Refresh members list after successful addition
+                        getAllMembers()
                     }
 
                     is Result.error -> {
-                        addMember.value = addMember.value.copy(
+                        _addMember.value = _addMember.value.copy(
                             isLoading = false,
-                            error = it.message.toString()
+                            error = result.message.toString(),
+                            isSuccess = ""
                         )
                     }
 
                     is Result.Loading -> {
-                        addMember.value = addMember.value.copy(
-                            isLoading = true
+                        _addMember.value = _addMember.value.copy(
+                            isLoading = true,
+                            error = "",
+                            isSuccess = ""
                         )
                     }
                 }
@@ -47,6 +63,39 @@ class ViewModel @Inject constructor(
         }
     }
 
+    fun getAllMembers() {
+        viewModelScope.launch {
+            repository.getAllMembers().collect { result ->
+                when (result) {
+                    is Result.success -> {
+                        _allMembers.value = _allMembers.value.copy(
+                            isLoading = false,
+                            members = result.data ?: emptyList(),
+                            error = ""
+                        )
+                    }
+
+                    is Result.error -> {
+                        _allMembers.value = _allMembers.value.copy(
+                            isLoading = false,
+                            error = result.message.toString()
+                        )
+                    }
+
+                    is Result.Loading -> {
+                        _allMembers.value = _allMembers.value.copy(
+                            isLoading = true,
+                            error = ""
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun clearAddMemberState() {
+        _addMember.value = AddMemberState()
+    }
 
 }
 
@@ -54,4 +103,11 @@ data class AddMemberState(
     val isLoading: Boolean = false,
     val error: String = "",
     val isSuccess: String = ""
+)
+
+data class MembersState(
+    val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
+    val members: List<UserDataModel> = emptyList(),
+    val error: String = ""
 )

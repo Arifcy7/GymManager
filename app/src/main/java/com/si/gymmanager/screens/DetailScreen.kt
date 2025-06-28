@@ -46,6 +46,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -85,6 +86,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.si.gymmanager.datamodels.UserDataModel
+import com.si.gymmanager.navigation.Routes
 import com.si.gymmanager.ui.theme.darkBlue
 import com.si.gymmanager.ui.theme.lightBlue
 import com.si.gymmanager.ui.theme.primaryBlue
@@ -225,6 +227,7 @@ fun DetailScreen(
         when {
             addMemberState.isSuccess.isNotEmpty() -> {
                 Toast.makeText(context, addMemberState.isSuccess, Toast.LENGTH_LONG).show()
+                navController.navigate(Routes.HomeScreen)
 
             }
             addMemberState.error.isNotEmpty() -> {
@@ -268,7 +271,7 @@ fun DetailScreen(
                         contentDescription = "Back",
                         tint = Color.White,
                         modifier = Modifier.clickable{
-
+                            navController.popBackStack()
                         }
                     )
                 },
@@ -478,7 +481,7 @@ fun DetailScreen(
                         } else {
                             val userDataModel = UserDataModel(
                                 name = name,
-                                photoUrl = selectedImageUri?.toString() ?: "",
+                                photoUrl = "",
                                 subscriptionStart = subscriptionStart,
                                 subscriptionEnd = subscriptionEnd,
                                 amountPaid = amountPaid.toIntOrNull() ?: 0,
@@ -487,8 +490,7 @@ fun DetailScreen(
                                 phone = phone,
                                 lastUpdateDate = System.currentTimeMillis()
                             )
-                            viewModel.addMember(userDataModel)
-                            Toast.makeText(context, "Member Added Successfully", Toast.LENGTH_LONG).show()
+                            viewModel.addMember(userDataModel, selectedImageUri)
                         }
                     },
                     modifier = Modifier.weight(1f),
@@ -497,13 +499,21 @@ fun DetailScreen(
                         contentColor = Color.White
                     )
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Save,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
+                    if (addMemberState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Save Member")
+                    Text(if (addMemberState.isLoading) "Saving..." else "Save Member")
                 }
             }
     }

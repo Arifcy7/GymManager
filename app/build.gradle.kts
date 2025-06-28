@@ -56,12 +56,14 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
+    implementation(libs.gson)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
+
     debugImplementation(libs.androidx.ui.test.manifest)
     // Serialization and Type safe Navigation dependencies
     implementation(libs.kotlinx.serialization.json.v180)
@@ -81,7 +83,6 @@ dependencies {
     implementation("com.airbnb.android:lottie-compose:6.1.0")
     // Compose Material Icons Extend Pack dependencies
     implementation("androidx.compose.material:material-icons-extended-android:1.7.6")
-
 
 
 }
