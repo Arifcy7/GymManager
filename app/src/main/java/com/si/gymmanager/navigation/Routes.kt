@@ -9,5 +9,8 @@ sealed class Routes {
     @Serializable
     object DetailEntryScreen: Routes()
 
+    @Serializable
+    object RevenueScreen: Routes()
+
 
 }

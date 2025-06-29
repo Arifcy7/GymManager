@@ -166,7 +166,7 @@ fun ExpandableMemberItem(
                         }
                         daysRemaining != null && daysRemaining <= 7 -> {
                             Text(
-                                text = "Expires in $daysRemaining days",
+                                text = "Expires in ${daysRemaining + 1} days",
                                 fontSize = 12.sp,
                                 color = Color(0xFFFF9800),
                                 fontWeight = FontWeight.Medium

@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.si.gymmanager.screens.detailscreen.DetailScreen
 import com.si.gymmanager.screens.homescreen.HomeScreen
+import com.si.gymmanager.screens.revenuescreen.RevenueScreen
 import com.si.gymmanager.utils.NavigationTransitionUtil
 import com.si.gymmanager.viewmodel.ViewModel
 
@@ -15,7 +16,7 @@ fun App() {
 
     val navController = rememberNavController()
     val viewModel: ViewModel = hiltViewModel()
-    NavHost(navController, startDestination = Routes.HomeScreen){
+    NavHost(navController, startDestination = Routes.HomeScreen) {
         composable<Routes.HomeScreen>(
             enterTransition = NavigationTransitionUtil.enterSlideTransition(),
             exitTransition = NavigationTransitionUtil.exitSlideTransition()
@@ -26,8 +27,20 @@ fun App() {
                 viewModel
             )
         }
-        composable<Routes.DetailEntryScreen> {
+        composable<Routes.DetailEntryScreen>(
+            enterTransition = NavigationTransitionUtil.enterSlideTransition(),
+            exitTransition = NavigationTransitionUtil.exitSlideTransition()
+        ) {
             DetailScreen(
+                navController,
+                viewModel
+            )
+        }
+        composable<Routes.RevenueScreen>(
+            enterTransition = NavigationTransitionUtil.enterSlideTransition(),
+            exitTransition = NavigationTransitionUtil.exitSlideTransition()
+        ) {
+            RevenueScreen(
                 navController,
                 viewModel
             )

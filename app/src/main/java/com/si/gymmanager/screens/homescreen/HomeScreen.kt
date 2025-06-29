@@ -1,45 +1,60 @@
 package com.si.gymmanager.screens.homescreen
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Money
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
-import com.si.gymmanager.datamodels.UserDataModel
 import com.si.gymmanager.navigation.Routes
 import com.si.gymmanager.ui.theme.primaryBlue
+import com.si.gymmanager.viewmodel.TotalRevenueState
 import com.si.gymmanager.viewmodel.ViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +81,14 @@ fun HomeScreen(
                     )
                 },
                 actions = {
-                    // total expense showing
+                    Icon(
+                        imageVector = Icons.Default.Money,
+                        contentDescription = "Total Revenue",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .clickable{navController.navigate(Routes.RevenueScreen)}
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = primaryBlue
@@ -96,7 +118,7 @@ fun HomeScreen(
                 .padding(padding)
         ) {
             when {
-                membersState.isLoading  -> {
+                membersState.isLoading -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -105,7 +127,7 @@ fun HomeScreen(
                     }
                 }
 
-                membersState.error.isNotEmpty()  -> {
+                membersState.error.isNotEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -159,7 +181,8 @@ fun HomeScreen(
                     val filteredMembers = remember(membersState.members, selectedFilter) {
                         when (selectedFilter) {
                             "Expired" -> membersState.members.filter { member ->
-                                val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                                val dateFormatter =
+                                    SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                                 val currentDate = Date()
                                 val endDate = try {
                                     dateFormatter.parse(member.subscriptionEnd)
@@ -168,8 +191,10 @@ fun HomeScreen(
                                 }
                                 endDate?.before(currentDate) ?: false
                             }
+
                             "Active" -> membersState.members.filter { member ->
-                                val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                                val dateFormatter =
+                                    SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                                 val currentDate = Date()
                                 val endDate = try {
                                     dateFormatter.parse(member.subscriptionEnd)
@@ -178,6 +203,7 @@ fun HomeScreen(
                                 }
                                 endDate?.after(currentDate) ?: false
                             }
+
                             else -> membersState.members
                         }
                     }
@@ -220,7 +246,7 @@ fun HomeScreen(
                             }
                         }
 
-                        // list of memebers
+                        // list of members
                         if (filteredMembers.isEmpty()) {
                             Box(
                                 modifier = Modifier.fillMaxSize(),

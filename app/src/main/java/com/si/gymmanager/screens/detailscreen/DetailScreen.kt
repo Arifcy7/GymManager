@@ -92,6 +92,7 @@ import com.si.gymmanager.ui.theme.darkBlue
 import com.si.gymmanager.ui.theme.lightBlue
 import com.si.gymmanager.ui.theme.primaryBlue
 import com.si.gymmanager.utils.DatePickerField
+import com.si.gymmanager.utils.Utils
 import com.si.gymmanager.viewmodel.ViewModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -171,18 +172,6 @@ fun DetailScreen(
         selectedImageUri = uri
     }
 
-    // Date formatter
-    val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-
-    // Function to parse date string to Date object
-    fun parseDate(dateString: String): Date? {
-        return try {
-            dateFormatter.parse(dateString)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
     // form data validator
     fun validateForm(): String? {
         return when {
@@ -192,8 +181,8 @@ fun DetailScreen(
 
             phone.length < 10 -> "Please enter a valid phone number"
             else -> {
-                val startDate = parseDate(subscriptionStart)
-                val endDate = parseDate(subscriptionEnd)
+                val startDate = Utils.parseDate(subscriptionStart)
+                val endDate = Utils.parseDate(subscriptionEnd)
 
                 if (startDate != null && endDate != null && endDate.before(startDate)) {
                     "Subscription end date cannot be earlier than start date"
@@ -221,7 +210,7 @@ fun DetailScreen(
     // update the date picker values every time it is changed
     LaunchedEffect(startDatePickerState.selectedDateMillis) {
         startDatePickerState.selectedDateMillis?.let {
-            subscriptionStart = dateFormatter.format(Date(it))
+            subscriptionStart = Utils.dateFormatter.format(Date(it))
         }
     }
     val addMemberState by viewModel.addMember.collectAsState()
@@ -239,9 +228,10 @@ fun DetailScreen(
     }
     LaunchedEffect(endDatePickerState.selectedDateMillis) {
         endDatePickerState.selectedDateMillis?.let {
-            subscriptionEnd = dateFormatter.format(Date(it))
+            subscriptionEnd = Utils.dateFormatter.format(Date(it))
         }
     }
+
     fun ResetAllValue(){
         name = ""
         selectedImageUri = null
