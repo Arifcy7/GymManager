@@ -5,8 +5,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.si.gymmanager.screens.DetailScreen
-import com.si.gymmanager.screens.HomeScreen
+import com.si.gymmanager.screens.detailscreen.DetailScreen
+import com.si.gymmanager.screens.homescreen.HomeScreen
 import com.si.gymmanager.utils.NavigationTransitionUtil
 import com.si.gymmanager.viewmodel.ViewModel
 

@@ -1,5 +1,6 @@
 @file:Suppress("DEPRECATION")
-package com.si.gymmanager.screens
+
+package com.si.gymmanager.screens.detailscreen
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -90,6 +91,7 @@ import com.si.gymmanager.navigation.Routes
 import com.si.gymmanager.ui.theme.darkBlue
 import com.si.gymmanager.ui.theme.lightBlue
 import com.si.gymmanager.ui.theme.primaryBlue
+import com.si.gymmanager.utils.DatePickerField
 import com.si.gymmanager.viewmodel.ViewModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -741,77 +743,6 @@ fun DetailScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DatePickerField(
-    label: String,
-    value: String,
-    onClick: () -> Unit,
-    icon: ImageVector,
-    primaryColor: Color,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.padding(vertical = 8.dp)
-    ) {
-        Text(
-            text = label,
-            color = primaryColor,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onClick() }
-        ) {
-            OutlinedTextField(
-                value = value,
-                onValueChange = { },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = primaryColor
-                    )
-                },
-                trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = null,
-                        tint = primaryColor
-                    )
-                },
-                placeholder = {
-                    Text(
-                        text = "DD/MM/YYYY",
-                        color = Color.Gray,
-                        fontSize = 12.sp
-                    )
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = primaryColor,
-                    unfocusedBorderColor = Color.Gray,
-                    focusedLabelColor = primaryColor,
-                    cursorColor = primaryColor,
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-                    disabledTextColor = Color.Black,
-                    disabledBorderColor = Color.Gray
-                ),
-                textStyle = LocalTextStyle.current.copy(
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal
-                ),
-                readOnly = true,
-                shape = RoundedCornerShape(8.dp),
-                enabled = false
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
