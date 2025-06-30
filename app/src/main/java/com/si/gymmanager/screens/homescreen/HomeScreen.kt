@@ -64,6 +64,13 @@ fun HomeScreen(
 ) {
     val membersState by viewModel.allMembers.collectAsState()
     var selectedFilter by remember { mutableStateOf("All") }
+    val deleteState by viewModel.deleteMember.collectAsState()
+
+
+    LaunchedEffect(deleteState) {
+        viewModel.getAllMembers()
+    }
+
 
     LaunchedEffect(Unit) {
         viewModel.getAllMembers()
@@ -281,11 +288,13 @@ fun HomeScreen(
                                         member = member,
                                         onEdit = {
                                             // Navigate to edit screen with member data
-                                            navController.navigate("${Routes.DetailEntryScreen}/${member.id}")
+                                            viewModel.setSelectedMember(member)
+                                            navController.navigate(Routes.DetailEntryScreen)
                                         },
                                         onDelete = {
-                                            // Handle delete action
-                                            // viewModel.deleteMember(member.id ?: "")
+                                            // delete user
+                                             viewModel.deleteMember(member.id ?: "")
+                                            viewModel.getAllMembers()
                                         }
                                     )
                                 }

@@ -18,15 +18,31 @@ class ViewModel @Inject constructor(
     private val repository: Repository
 ) : ViewModel() {
 
-
     private val _addMember = MutableStateFlow(AddMemberState())
     val addMember = _addMember.asStateFlow()
 
     private val _allMembers = MutableStateFlow(MembersState())
     val allMembers = _allMembers.asStateFlow()
 
+    // Cached members flow for offline-first experience
+    private val _cachedMembers = MutableStateFlow<List<UserDataModel>>(emptyList())
+    val cachedMembers = _cachedMembers.asStateFlow()
+
+    private val _syncStatus = MutableStateFlow(SyncState())
+    val syncStatus = _syncStatus.asStateFlow()
+
     init {
         getAllMembers()
+        observeCachedMembers()
+    }
+
+    // Observe cached members from Room database
+    private fun observeCachedMembers() {
+        viewModelScope.launch {
+            repository.getCachedMembersFlow().collect { members ->
+                _cachedMembers.value = members
+            }
+        }
     }
 
     fun addMember(userDataModel: UserDataModel, imageUri: Uri? = null) {
@@ -34,28 +50,23 @@ class ViewModel @Inject constructor(
             repository.addMembersDetails(userDataModel, imageUri).collect { result ->
                 when (result) {
                     is Result.success -> {
-                        _addMember.value = _addMember.value.copy(
+                        _addMember.value = AddMemberState(
                             isLoading = false,
-                            isSuccess = result.data.toString(),
-                            error = ""
+                            isSuccess = result.data
                         )
-                        // Refresh members list after successful addition
                         getAllMembers()
                     }
 
                     is Result.error -> {
-                        _addMember.value = _addMember.value.copy(
+                        _addMember.value = AddMemberState(
                             isLoading = false,
-                            error = result.message.toString(),
-                            isSuccess = ""
+                            error = result.message
                         )
                     }
 
                     is Result.Loading -> {
-                        _addMember.value = _addMember.value.copy(
-                            isLoading = true,
-                            error = "",
-                            isSuccess = ""
+                        _addMember.value = AddMemberState(
+                            isLoading = true
                         )
                     }
                 }
@@ -71,20 +82,20 @@ class ViewModel @Inject constructor(
                         _allMembers.value = _allMembers.value.copy(
                             isLoading = false,
                             members = result.data ?: emptyList(),
-                            error = ""
                         )
                     }
 
                     is Result.error -> {
                         _allMembers.value = _allMembers.value.copy(
                             isLoading = false,
-                            error = result.message.toString()
+                            error = result.message
                         )
                     }
 
                     is Result.Loading -> {
                         _allMembers.value = _allMembers.value.copy(
                             isLoading = true,
+                            members = emptyList(), // Optional fallback
                             error = ""
                         )
                     }
@@ -93,8 +104,13 @@ class ViewModel @Inject constructor(
         }
     }
 
+
     fun clearAddMemberState() {
         _addMember.value = AddMemberState()
+    }
+
+    fun clearSyncStatus() {
+        _syncStatus.value = SyncState()
     }
 
     val _totalRevenue = MutableStateFlow(TotalRevenueState())
@@ -198,6 +214,71 @@ class ViewModel @Inject constructor(
         }
     }
 
+    val _deleteMember = MutableStateFlow(DeleteMemberState())
+    val deleteMember = _deleteMember.asStateFlow()
+
+    fun deleteMember(id: String) {
+        viewModelScope.launch {
+            repository.deleteMemberById(id).collect {
+                when (it) {
+                    is Result.success -> {
+                        _deleteMember.value = DeleteMemberState(
+                            isLoading = false,
+                            isSuccess = it.data.toString(),
+                        )
+                    }
+                    is Result.error -> {
+                        _deleteMember.value = DeleteMemberState(
+                            isLoading = false,
+                            error = it.message.toString(),
+                        )
+                    }
+                    is Result.Loading -> {
+                        _deleteMember.value = DeleteMemberState(
+                            isLoading = true
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    val _updateMember = MutableStateFlow(UpdateMemberState())
+    val updateMember = _updateMember.asStateFlow()
+
+    fun updateMember(userDataModel: UserDataModel) {
+        viewModelScope.launch {
+            repository.updateMember(userDataModel).collect {
+                when (it) {
+                    is Result.success -> {
+                        _updateMember.value = UpdateMemberState(
+                            isLoading = false,
+                            isSuccess = it.data
+                        )
+                    }
+                    is Result.error -> {
+                        _updateMember.value = UpdateMemberState(
+                            isLoading = false,
+                            error = it.message.toString()
+                        )
+                    }
+                    is Result.Loading -> {
+                        _updateMember.value = UpdateMemberState(
+                            isLoading = true
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // passing userdatamodel for navigation
+    val _selectedMember = MutableStateFlow(UserDataModel())
+    val selectedMember = _selectedMember.asStateFlow()
+
+    fun setSelectedMember(userDataModel: UserDataModel) {
+        _selectedMember.value = userDataModel
+    }
 
 }
 
@@ -227,6 +308,25 @@ data class RevenueEntriesState(
 )
 
 data class AddRevenueEntriesState(
+    val isLoading: Boolean = false,
+    val error: String = "",
+    val isSuccess: String = ""
+)
+
+data class SyncState(
+    val isLoading: Boolean = false,
+    val isSuccess: Boolean = false,
+    val error: String = "",
+    val message: String = ""
+)
+
+data class DeleteMemberState(
+    val isLoading: Boolean = false,
+    val error: String = "",
+    val isSuccess: String = ""
+)
+
+data class UpdateMemberState(
     val isLoading: Boolean = false,
     val error: String = "",
     val isSuccess: String = ""

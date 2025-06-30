@@ -104,18 +104,44 @@ import java.util.Locale
 fun DetailScreen(
     navController: NavController,
     viewModel: ViewModel = hiltViewModel()
-){
-    // form value state
-    var name by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var subscriptionStart by remember { mutableStateOf("") }
-    var subscriptionEnd by remember { mutableStateOf("") }
-    var amountPaid by remember { mutableStateOf("") }
-    var aadhaarNumber by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
+) {
+    val memberToEdit = viewModel.selectedMember.collectAsState().value
+    val isEditMode = remember { memberToEdit.id?.isNotBlank() == true }
+
+    // Initialize form values based on mode
+    var name by remember { mutableStateOf(memberToEdit.name ?: "") }
+    var subscriptionStart by remember { mutableStateOf(memberToEdit.subscriptionStart ?: "") }
+    var subscriptionEnd by remember { mutableStateOf(memberToEdit.subscriptionEnd ?: "") }
+    var amountPaid by remember { mutableStateOf(memberToEdit.amountPaid?.toString() ?: "") }
+    var aadhaarNumber by remember { mutableStateOf(memberToEdit.aadhaarNumber ?: "") }
+    var address by remember { mutableStateOf(memberToEdit.address ?: "") }
+    var phone by remember { mutableStateOf(memberToEdit.phone ?: "") }
 
     val context = LocalContext.current
+    val updateMemberState by viewModel.updateMember.collectAsState()
+    val addMemberState by viewModel.addMember.collectAsState()
+
+    // Handle state updates
+    LaunchedEffect(updateMemberState) {
+        if (updateMemberState.isSuccess.isNotEmpty()) {
+            Toast.makeText(context, updateMemberState.isSuccess, Toast.LENGTH_LONG).show()
+            navController.popBackStack()
+        }
+        if (updateMemberState.error.isNotEmpty()) {
+            Toast.makeText(context, "Error: ${updateMemberState.error}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    LaunchedEffect(addMemberState) {
+        if (addMemberState.isSuccess.isNotEmpty()) {
+            Toast.makeText(context, addMemberState.isSuccess, Toast.LENGTH_LONG).show()
+            viewModel.clearAddMemberState()
+            navController.popBackStack()
+        }
+        if (addMemberState.error.isNotEmpty()) {
+            Toast.makeText(context, "Error: ${addMemberState.error}", Toast.LENGTH_LONG).show()
+        }
+    }
 
     // date picker states
     var showStartDatePicker by remember { mutableStateOf(false) }
@@ -123,61 +149,13 @@ fun DetailScreen(
     val startDatePickerState = rememberDatePickerState()
     val endDatePickerState = rememberDatePickerState()
 
-    // bottom sheet states
-    var showImageSourceBottomSheet by remember { mutableStateOf(false) }
-    var showPermissionDeniedDialog by remember { mutableStateOf(false) }
-
-
-
-    // Create a temporary file for camera capture using FileProvider
-    val tempImageFile = remember {
-        File.createTempFile("temp_image", ".jpg", context.cacheDir).apply {
-            createNewFile()
-            deleteOnExit()
-        }
-    }
-
-    // Create content URI using FileProvider
-    val tempImageUri = remember {
-        FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            tempImageFile
-        )
-    }
-
-    // Permission launcher
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success: Boolean ->
-        if (success) {
-            selectedImageUri = tempImageUri
-        }
-    }
-
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            cameraLauncher.launch(tempImageUri)
-        } else {
-            showPermissionDeniedDialog = true
-        }
-    }
-
-    // Image selection launchers
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        selectedImageUri = uri
-    }
 
     // form data validator
     fun validateForm(): String? {
         return when {
             name.isBlank() || subscriptionStart.isBlank() || subscriptionEnd.isBlank()
                     || amountPaid.isBlank() || aadhaarNumber.isBlank() || address.isBlank()
-                    || phone.isBlank() -> "Enter Required Filled"
+                    || phone.isBlank() -> "Please fill all required fields"
 
             phone.length < 10 -> "Please enter a valid phone number"
             else -> {
@@ -193,19 +171,6 @@ fun DetailScreen(
         }
     }
 
-    fun checkCameraPermissionAndLaunch() {
-        when {
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                cameraLauncher.launch(tempImageUri)
-            }
-            else -> {
-                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-            }
-        }
-    }
 
     // update the date picker values every time it is changed
     LaunchedEffect(startDatePickerState.selectedDateMillis) {
@@ -213,28 +178,15 @@ fun DetailScreen(
             subscriptionStart = Utils.dateFormatter.format(Date(it))
         }
     }
-    val addMemberState by viewModel.addMember.collectAsState()
-    LaunchedEffect(addMemberState) {
-        when {
-            addMemberState.isSuccess.isNotEmpty() -> {
-                Toast.makeText(context, addMemberState.isSuccess, Toast.LENGTH_LONG).show()
-                navController.navigate(Routes.HomeScreen)
 
-            }
-            addMemberState.error.isNotEmpty() -> {
-                Toast.makeText(context, "Error: ${addMemberState.error}", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
     LaunchedEffect(endDatePickerState.selectedDateMillis) {
         endDatePickerState.selectedDateMillis?.let {
             subscriptionEnd = Utils.dateFormatter.format(Date(it))
         }
     }
 
-    fun ResetAllValue(){
+    fun resetAllValues() {
         name = ""
-        selectedImageUri = null
         subscriptionStart = ""
         subscriptionEnd = ""
         amountPaid = ""
@@ -243,26 +195,26 @@ fun DetailScreen(
         phone = ""
         showStartDatePicker = false
         showEndDatePicker = false
-        showImageSourceBottomSheet = false
-        showPermissionDeniedDialog = false
+
     }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                       Text(
-                           text = "Add Member Details",
-                           color = Color.White,
-                           fontSize = 20.sp,
-                           fontWeight = FontWeight.Bold
-                       )
+                    Text(
+                        text = if (isEditMode) "Edit Member Details" else "Add Member Details",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 },
                 navigationIcon = {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Back",
                         tint = Color.White,
-                        modifier = Modifier.clickable{
+                        modifier = Modifier.clickable {
                             navController.popBackStack()
                         }
                     )
@@ -272,8 +224,7 @@ fun DetailScreen(
                 )
             )
         }
-    )
-    {padding->
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -282,82 +233,6 @@ fun DetailScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // profile section
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Profile Photo",
-                        color = primaryBlue,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape)
-                            .border(3.dp, primaryBlue, CircleShape)
-                            .clickable { showImageSourceBottomSheet = true },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (selectedImageUri != null) {
-                            AsyncImage(
-                                model = selectedImageUri,
-                                contentDescription = "Profile Photo",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = null,
-                                    tint = primaryBlue,
-                                    modifier = Modifier.size(48.dp)
-                                )
-                                Text(
-                                    text = "Tap to add photo",
-                                    color = primaryBlue,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                   if (selectedImageUri != null){
-                       OutlinedButton(
-                           onClick = { showImageSourceBottomSheet = true },
-                           colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryBlue),
-                           modifier = Modifier.padding(top = 8.dp)
-                       ) {
-                           Icon(
-                               imageVector = Icons.Default.PhotoCamera,
-                               contentDescription = null,
-                               modifier = Modifier.size(18.dp)
-                           )
-                           Spacer(modifier = Modifier.width(8.dp))
-                           Text("Change Photo")
-                       }
-                   }
-                }
-            }
-
             // name field
             DetailFormField(
                 label = "Member Name *",
@@ -403,9 +278,7 @@ fun DetailScreen(
             DetailFormField(
                 label = "Aadhaar Number *",
                 value = aadhaarNumber,
-                onValueChange = {
-                    aadhaarNumber = it
-                },
+                onValueChange = { aadhaarNumber = it },
                 icon = Icons.Default.CreditCard,
                 primaryColor = primaryBlue,
                 keyboardType = KeyboardType.Number,
@@ -425,9 +298,7 @@ fun DetailScreen(
             DetailFormField(
                 label = "Phone Number *",
                 value = phone,
-                onValueChange = {
-                    phone = it
-                },
+                onValueChange = { phone = it },
                 icon = Icons.Default.Phone,
                 primaryColor = primaryBlue,
                 keyboardType = KeyboardType.Phone,
@@ -442,9 +313,7 @@ fun DetailScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
-                    onClick = {
-                        ResetAllValue()
-                    },
+                    onClick = { resetAllValues() },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = primaryBlue
@@ -472,8 +341,8 @@ fun DetailScreen(
                             Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
                         } else {
                             val userDataModel = UserDataModel(
+                                id = if (isEditMode) memberToEdit.id else null,
                                 name = name,
-                                photoUrl = "",
                                 subscriptionStart = subscriptionStart,
                                 subscriptionEnd = subscriptionEnd,
                                 amountPaid = amountPaid.toIntOrNull() ?: 0,
@@ -482,7 +351,12 @@ fun DetailScreen(
                                 phone = phone,
                                 lastUpdateDate = System.currentTimeMillis()
                             )
-                            viewModel.addMember(userDataModel, selectedImageUri)
+
+                            if (isEditMode) {
+                                viewModel.updateMember(userDataModel)
+                            } else {
+                                viewModel.addMember(userDataModel)
+                            }
                         }
                     },
                     modifier = Modifier.weight(1f),
@@ -491,7 +365,7 @@ fun DetailScreen(
                         contentColor = Color.White
                     )
                 ) {
-                    if (addMemberState.isLoading) {
+                    if (addMemberState.isLoading || updateMemberState.isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(18.dp),
                             color = Color.White,
@@ -505,194 +379,19 @@ fun DetailScreen(
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (addMemberState.isLoading) "Saving..." else "Save Member")
-                }
-            }
-    }
-    }
-
-    // permission denied dialog
-    if (showPermissionDeniedDialog) {
-        AlertDialog(
-            onDismissRequest = { showPermissionDeniedDialog = false },
-            title = {
-                Text(
-                    text = "Camera Permission Required",
-                    color = primaryBlue,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text(
-                    text = "This app needs camera permission to take photos. Please grant the permission in your device settings.",
-                    color = Color.Gray
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = { showPermissionDeniedDialog = false }
-                ) {
-                    Text("OK", color = primaryBlue)
-                }
-            },
-            containerColor = Color.White,
-            shape = RoundedCornerShape(12.dp)
-        )
-    }
-
-    // Image Source Selection Bottom Sheet
-    if (showImageSourceBottomSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showImageSourceBottomSheet = false },
-            containerColor = Color.White,
-            contentColor = primaryBlue
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-
-
-                Text(
-                    text = "Select Image Source",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = primaryBlue,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                // Gallery Option
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            galleryLauncher.launch("image/*")
-                            showImageSourceBottomSheet = false
-                        },
-                    colors = CardDefaults.cardColors(
-                        containerColor = lightBlue.copy(alpha = 0.1f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(
-                                    primaryBlue.copy(alpha = 0.1f),
-                                    CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PhotoLibrary,
-                                contentDescription = null,
-                                tint = primaryBlue,
-                                modifier = Modifier.size(24.dp)
-                            )
+                    Text(
+                        when {
+                            addMemberState.isLoading || updateMemberState.isLoading -> "Saving..."
+                            isEditMode -> "Update Member"
+                            else -> "Save Member"
                         }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Column {
-                            Text(
-                                text = "Gallery",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = primaryBlue
-                            )
-                            Text(
-                                text = "Choose from existing photos",
-                                fontSize = 14.sp,
-                                color = Color.Gray
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = primaryBlue
-                        )
-                    }
+                    )
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Camera Option
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            checkCameraPermissionAndLaunch()
-                            showImageSourceBottomSheet = false
-                        },
-                    colors = CardDefaults.cardColors(
-                        containerColor = lightBlue.copy(alpha = 0.1f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(
-                                    primaryBlue.copy(alpha = 0.1f),
-                                    CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PhotoCamera,
-                                contentDescription = null,
-                                tint = primaryBlue,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Column {
-                            Text(
-                                text = "Camera",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = primaryBlue
-                            )
-                            Text(
-                                text = "Take a new photo",
-                                fontSize = 14.sp,
-                                color = Color.Gray
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = primaryBlue
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
+
+
 
     // Start Date Picker
     if (showStartDatePicker) {
@@ -732,7 +431,6 @@ fun DetailScreen(
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

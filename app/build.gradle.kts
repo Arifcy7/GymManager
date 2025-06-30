@@ -84,5 +84,8 @@ dependencies {
     // Compose Material Icons Extend Pack dependencies
     implementation("androidx.compose.material:material-icons-extended-android:1.7.6")
 
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
 }

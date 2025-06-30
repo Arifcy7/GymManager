@@ -1,10 +1,12 @@
 package com.si.gymmanager.datamodels
 
+import kotlinx.serialization.Serializable
 
+
+@Serializable
 data class UserDataModel(
     val id: String? = null,
     val name: String? = null,
-    val photoUrl: String? = null,
     val subscriptionStart: String? = null,
     val subscriptionEnd: String? = null,
     val amountPaid: Int? = null,

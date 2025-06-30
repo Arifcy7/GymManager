@@ -66,8 +66,11 @@ fun RevenueEntriesSection(
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(entries) { entry ->
+                    items(entries.reversed()) { entry ->
                         RevenueEntryItem(entry = entry)
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(55.dp))
                     }
                 }
             }
@@ -233,13 +236,6 @@ fun EmptyRevenueState(
             fontWeight = FontWeight.Medium,
             color = Color.Gray,
             textAlign = TextAlign.Center
-        )
-        Text(
-            text = "Tap the + button to add your first entry",
-            fontSize = 14.sp,
-            color = Color.Gray,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 4.dp)
         )
     }
 }

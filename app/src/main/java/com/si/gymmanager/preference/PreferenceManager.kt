@@ -55,28 +55,4 @@ class PreferenceManager @Inject constructor(
         }
     }
 
-    fun clearCache() {
-        sharedPreferences.edit()
-            .remove(KEY_CACHED_MEMBERS)
-            .putLong(KEY_LAST_FETCH_TIME, 0L)
-            .apply()
-    }
-
-    // Additional utility methods
-    fun isCacheValid(maxAgeInMinutes: Int = 5): Boolean {
-        val lastFetchTime = getLastFetchTime()
-        val currentTime = System.currentTimeMillis()
-        val maxAgeInMillis = maxAgeInMinutes * 60 * 1000L
-
-        return (currentTime - lastFetchTime) < maxAgeInMillis
-    }
-
-    fun getCacheAge(): Long {
-        val lastFetchTime = getLastFetchTime()
-        return if (lastFetchTime > 0) {
-            System.currentTimeMillis() - lastFetchTime
-        } else {
-            -1L
-        }
-    }
 }

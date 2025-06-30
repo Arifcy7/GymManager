@@ -106,21 +106,12 @@ fun ExpandableMemberItem(
                         .border(2.dp, primaryBlue, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (member.photoUrl!!.isNotEmpty()) {
-                        AsyncImage(
-                            model = member.photoUrl,
-                            contentDescription = "Profile Photo",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
                         Icon(
                             imageVector = Icons.Default.Person,
                             contentDescription = null,
                             tint = primaryBlue,
                             modifier = Modifier.size(32.dp)
                         )
-                    }
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -244,11 +235,6 @@ fun ExpandableMemberItem(
                     DetailRow("Subscription Start", member.subscriptionStart ?: "N/A")
                     DetailRow("Subscription End", member.subscriptionEnd ?: "N/A")
 
-                    member.lastUpdateDate?.let { timestamp ->
-                        val lastUpdate = Date(timestamp)
-                        val lastUpdateFormatted = dateFormatter.format(lastUpdate)
-                        DetailRow("Last Updated", lastUpdateFormatted)
-                    }
 
                     // Subscription summary
                     Spacer(modifier = Modifier.height(8.dp))

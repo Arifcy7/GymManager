@@ -12,10 +12,12 @@ import com.google.firebase.storage.FirebaseStorage
 import com.si.gymmanager.common.Result
 import com.si.gymmanager.datamodels.RevenueEntry
 import com.si.gymmanager.datamodels.UserDataModel
+import com.si.gymmanager.preference.DatabaseManager
 import com.si.gymmanager.preference.PreferenceManager
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
@@ -24,109 +26,121 @@ class Repository @Inject constructor(
     private val firebaseRealTimeDb: FirebaseDatabase,
     private val firebaseFirestore: FirebaseFirestore,
     private val firebaseStorage: FirebaseStorage,
-    private val preferenceManager: PreferenceManager
+    private val preferenceManager: PreferenceManager,
+    private val databaseManager: DatabaseManager
 ) {
     val currentTime = System.currentTimeMillis()
 
-    // uploading image to firebase storage
-    private suspend fun uploadImageToStorage(imageUri: Uri): Result<String> {
-        return try {
-            val fileName = "member_images/${UUID.randomUUID()}.jpg"
-            val storageRef = firebaseStorage.reference.child(fileName)
 
-            val uploadTask = storageRef.putFile(imageUri).await()
-            val downloadUrl = uploadTask.storage.downloadUrl.await()
-
-            Result.success(downloadUrl.toString())
-        } catch (e: Exception) {
-            Result.error("Failed to upload image: ${e.message}")
-        }
-    }
-
-    //add member to firestore and revenue update in realtime database
-    fun addMembersDetails(userDataModel: UserDataModel, imageUri: Uri?): Flow<Result<String>> =
+    // Fixed addMembersDetails method in Repository.kt
+    fun addMembersDetails(updatedUserData: UserDataModel, imageUri: Uri?): Flow<Result<String>> =
         callbackFlow {
             trySend(Result.Loading)
 
             try {
-                var photoUrl = ""
-
-                // first upload image to storage and get the download url
-                if (imageUri != null) {
-                    when (val imageResult = uploadImageToStorage(imageUri)) {
-                        is Result.success -> {
-                            photoUrl = imageResult.data ?: ""
-                        }
-
-                        is Result.error -> {
-                            trySend(Result.error("Image upload failed: ${imageResult.message}"))
-                            return@callbackFlow
-                        }
-
-                        else -> {}
-                    }
-                }
-
-                // adding photo url to user data model
-                val updatedUserData = userDataModel.copy(
-                    photoUrl = photoUrl,
-                    lastUpdateDate = System.currentTimeMillis()
-                )
-
-                // add member to firestore
+                // Add member to firestore
                 firebaseFirestore.collection("Members")
                     .add(updatedUserData)
                     .addOnSuccessListener { documentReference ->
-                        // update the document with its own ID
+                        // Update the document with its own ID
                         val memberWithId = updatedUserData.copy(id = documentReference.id)
                         documentReference.set(memberWithId)
                             .addOnSuccessListener {
-                                trySend(Result.success("Member Added Successfully"))
+                                // Cache the new member to local database first
+                                try {
+                                    launch {
+                                        databaseManager.insertMember(memberWithId)
+                                        Log.d("Repository", "Member cached successfully")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("Repository", "Failed to cache member: ${e.message}")
+                                }
 
-                                // adding revenue entry to realtime database
+                                // Adding revenue entry to realtime database
                                 val revenueEntry = RevenueEntry(
                                     name = updatedUserData.name,
                                     amount = updatedUserData.amountPaid,
-                                    revenueType = "income"
+                                    revenueType = "income",
                                 )
 
+                                // Add revenue entry
                                 firebaseRealTimeDb
                                     .getReference("Revenue")
                                     .push()
                                     .setValue(revenueEntry)
-                                val totalRevenueRef =
-                                    firebaseRealTimeDb.getReference("TotalRevenue")
-                                totalRevenueRef.get().addOnSuccessListener { snapshot ->
-                                    val currentTotal = snapshot.getValue(Int::class.java) ?: 0
-                                    val newTotal =
-                                        updatedUserData.amountPaid?.let { it1 -> currentTotal + it1 }
-                                            ?: 0
+                                    .addOnSuccessListener {
+                                        Log.d("Repository", "Revenue entry added successfully")
 
-                                    totalRevenueRef.setValue(newTotal)
-                                }.addOnFailureListener { exception ->
-                                    Log.e(
-                                        "TotalRevenueUpdate",
-                                        "Failed to update total revenue: ${exception.message}"
-                                    )
-                                }
+                                        // Update total revenue
+                                        val totalRevenueRef = firebaseRealTimeDb.getReference("TotalRevenue")
+                                        totalRevenueRef.get().addOnSuccessListener { snapshot ->
+                                            val currentTotal = snapshot.getValue(Long::class.java) ?: 0L
+                                            val newTotal = updatedUserData.amountPaid?.let { it.toLong() + currentTotal } ?: currentTotal
 
+                                            totalRevenueRef.setValue(newTotal)
+                                                .addOnSuccessListener {
+                                                    Log.d("Repository", "Total revenue updated successfully")
+                                                    trySend(Result.success("Member Added Successfully"))
+                                                    close() // Close the flow after everything is done
+                                                }
+                                                .addOnFailureListener { exception ->
+                                                    Log.e("Repository", "Failed to update total revenue: ${exception.message}")
+                                                    trySend(Result.success("Member added but failed to update total revenue"))
+                                                    close()
+                                                }
+                                        }.addOnFailureListener { exception ->
+                                            Log.e("Repository", "Failed to get current total revenue: ${exception.message}")
+                                            trySend(Result.success("Member added but failed to update total revenue"))
+                                            close()
+                                        }
+                                    }
+                                    .addOnFailureListener { exception ->
+                                        Log.e("Repository", "Failed to add revenue entry: ${exception.message}")
+                                        trySend(Result.success("Member added but failed to add revenue entry"))
+                                        close()
+                                    }
                             }
                             .addOnFailureListener { exception ->
+                                Log.e("Repository", "Failed to update member ID: ${exception.message}")
                                 trySend(Result.error("Failed to update member ID: ${exception.message}"))
+                                close()
                             }
                     }
                     .addOnFailureListener { exception ->
+                        Log.e("Repository", "Failed to add member to Firestore: ${exception.message}")
                         trySend(Result.error("Failed to add member: ${exception.message}"))
+                        close()
                     }
 
             } catch (e: Exception) {
+                Log.e("Repository", "Unexpected error in addMembersDetails: ${e.message}")
                 trySend(Result.error("Unexpected error: ${e.message}"))
+                close()
             }
 
             awaitClose {
-                close()
+                Log.d("Repository", "addMembersDetails flow closed")
             }
         }
+
+    // delete member from firestore using member id
+    fun deleteMemberById(memberId: String): Flow<Result<String>> = callbackFlow {
+        trySend(Result.Loading)
+
+        firebaseFirestore.collection("Members").document(memberId).delete()
+            .addOnSuccessListener {
+                launch {
+                    databaseManager.deleteMember(id = memberId)
+                }
+                trySend(Result.success("Member deleted successfully"))
+            }
+            .addOnFailureListener { exception ->
+                trySend(Result.error("Failed to delete member: ${exception.message}"))
+            }
+        awaitClose {
+            close()
+        }
+    }
 
     // get total revenue from realtime database
     fun getTotalRevenue(): Flow<Result<Long>> = callbackFlow {
@@ -204,16 +218,20 @@ class Repository @Inject constructor(
         }
     }
 
-
+    // Fixed: Completely rewritten to properly handle caching logic
     fun getAllMembers(): Flow<Result<List<UserDataModel>>> = callbackFlow {
         trySend(Result.Loading)
 
         try {
-            val lastFetchTime = preferenceManager.getLastFetchTime()
-            val cachedMembers = preferenceManager.getCachedMembers()
+            // Always return cached data immediately if available
+            val cachedMembers = databaseManager.getCachedMembers()
+            if (cachedMembers.isNotEmpty()) {
+                trySend(Result.success(cachedMembers))
+            }
 
+            val lastFetchTime = databaseManager.getLastFetchTime()
 
-            // fetch new data greater than last fetch time
+            // Determine query based on last fetch time
             val query = if (lastFetchTime > 0) {
                 firebaseFirestore.collection("Members")
                     .whereGreaterThan("lastUpdateDate", lastFetchTime)
@@ -225,52 +243,114 @@ class Repository @Inject constructor(
 
             query.get()
                 .addOnSuccessListener { documents ->
-                    val newMembers = documents.toObjects(UserDataModel::class.java)
+                    launch {
+                        try {
+                            val newMembers = documents.toObjects(UserDataModel::class.java)
 
-                    if (newMembers.isNotEmpty()) {
-                        // merge with cached data
-                        val allMembers = if (lastFetchTime > 0) {
-                            val updatedCachedMembers = cachedMembers.toMutableList()
+                            if (newMembers.isNotEmpty()) {
+                                val finalMembersList = if (lastFetchTime > 0) {
+                                    // Incremental update: merge new data with cached
+                                    val existingMembers = databaseManager.getCachedMembers().toMutableList()
 
-                            newMembers.forEach { newMember ->
-                                val existingIndex =
-                                    updatedCachedMembers.indexOfFirst { it.id == newMember.id }
-                                if (existingIndex != -1) {
-                                    updatedCachedMembers[existingIndex] = newMember
+                                    newMembers.forEach { newMember ->
+                                        val existingIndex = existingMembers.indexOfFirst { it.id == newMember.id }
+                                        if (existingIndex != -1) {
+                                            // Update existing member
+                                            existingMembers[existingIndex] = newMember
+                                        } else {
+                                            // Add new member
+                                            existingMembers.add(newMember)
+                                        }
+                                    }
+
+                                    existingMembers.sortedByDescending { it.lastUpdateDate }
                                 } else {
-                                    updatedCachedMembers.add(0, newMember)
+                                    // Full refresh
+                                    newMembers
                                 }
+
+                                // Cache the updated data
+                                databaseManager.cacheMember(finalMembersList)
+                                databaseManager.setLastFetchTime(currentTime)
+
+                                // Send updated data
+                                trySend(Result.success(finalMembersList))
+                            } else if (lastFetchTime > 0) {
+                                if (cachedMembers.isEmpty()){
+                                    trySend(Result.success(emptyList()))
+                                }else{
+                                    Log.d("Repository", "No new members to sync")
+                                }
+                                // No new data available, but we have cached data already sent above
+                            } else {
+                                // No data at all (first time, no cached, no remote)
+                                trySend(Result.success(emptyList()))
                             }
-
-                            updatedCachedMembers.sortedByDescending { it.lastUpdateDate }
-                        } else {
-                            newMembers
+                        } catch (e: Exception) {
+                            Log.e("Repository", "Error processing members data: ${e.message}")
+                            // If we already sent cached data above, don't send error
+                            if (cachedMembers.isEmpty()) {
+                                trySend(Result.error("Error processing data: ${e.message}"))
+                            }
                         }
-
-                        // cache the updated data and last fetch time
-                        preferenceManager.cacheMembers(allMembers)
-                        preferenceManager.setLastFetchTime(currentTime)
-
-                        trySend(Result.success(allMembers))
-                    } else if (cachedMembers.isNotEmpty()) {
-                        // No new data, return cached data
-                        trySend(Result.success(cachedMembers))
-                    } else {
-                        // No data at all
-                        trySend(Result.success(emptyList()))
                     }
                 }
                 .addOnFailureListener { exception ->
-                    // return cached data if available onn failure
-                    if (cachedMembers.isNotEmpty()) {
-                        trySend(Result.success(cachedMembers))
-                    } else {
+                    Log.e("Repository", "Failed to fetch from Firestore: ${exception.message}")
+                    // If we don't have cached data, send error
+                    if (cachedMembers.isEmpty()) {
                         trySend(Result.error("Failed to fetch members: ${exception.message}"))
                     }
+                    // If we have cached data, we already sent it above, so just log the error
                 }
 
         } catch (e: Exception) {
+            Log.e("Repository", "Unexpected error in getAllMembers: ${e.message}")
             trySend(Result.error("Unexpected error: ${e.message}"))
+        }
+
+        awaitClose {
+            close()
+        }
+    }
+
+    // Method to get members from local database only (for offline-first UI)
+    fun getCachedMembersFlow(): Flow<List<UserDataModel>> {
+        return databaseManager.getCachedMembersFlow()
+    }
+
+    fun updateMember(member: UserDataModel): Flow<Result<String>> = callbackFlow {
+        trySend(Result.Loading)
+
+        try {
+            val updatedMember = member.copy(lastUpdateDate = System.currentTimeMillis())
+
+            firebaseFirestore.collection("Members").document(member.id ?: "")
+                .set(updatedMember)
+                .addOnSuccessListener {
+                    // Update local cache
+                    launch {
+                        try {
+                            databaseManager.updateMember(updatedMember)
+                            Log.d("Repository", "Member updated in cache successfully")
+                        } catch (e: Exception) {
+                            Log.e("Repository", "Failed to update member in cache: ${e.message}")
+                        }
+                    }
+
+                    trySend(Result.success("Member updated successfully"))
+                    close()
+                }
+                .addOnFailureListener { exception ->
+                    Log.e("Repository", "Failed to update member: ${exception.message}")
+                    trySend(Result.error("Failed to update member: ${exception.message}"))
+                    close()
+                }
+
+        } catch (e: Exception) {
+            Log.e("Repository", "Unexpected error in updateMember: ${e.message}")
+            trySend(Result.error("Unexpected error: ${e.message}"))
+            close()
         }
 
         awaitClose {
