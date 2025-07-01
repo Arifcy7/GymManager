@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Money
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -41,7 +41,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -50,7 +49,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.si.gymmanager.navigation.Routes
 import com.si.gymmanager.ui.theme.primaryBlue
-import com.si.gymmanager.viewmodel.TotalRevenueState
 import com.si.gymmanager.viewmodel.ViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -89,7 +87,7 @@ fun HomeScreen(
                 },
                 actions = {
                     Icon(
-                        imageVector = Icons.Default.Money,
+                        imageVector = Icons.Default.AttachMoney,
                         contentDescription = "Total Revenue",
                         tint = Color.White,
                         modifier = Modifier
@@ -175,7 +173,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Add your first member!",
+                                text = "+ Add your first member!",
                                 fontSize = 14.sp,
                                 color = Color.Gray
                             )
@@ -192,7 +190,7 @@ fun HomeScreen(
                                     SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                                 val currentDate = Date()
                                 val endDate = try {
-                                    dateFormatter.parse(member.subscriptionEnd)
+                                    dateFormatter.parse(member.subscriptionEnd.toString())
                                 } catch (e: Exception) {
                                     null
                                 }
@@ -204,7 +202,7 @@ fun HomeScreen(
                                     SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                                 val currentDate = Date()
                                 val endDate = try {
-                                    dateFormatter.parse(member.subscriptionEnd)
+                                    dateFormatter.parse(member.subscriptionEnd.toString())
                                 } catch (e: Exception) {
                                     null
                                 }

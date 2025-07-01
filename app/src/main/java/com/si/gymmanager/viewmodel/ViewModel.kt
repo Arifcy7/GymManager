@@ -1,6 +1,5 @@
 package com.si.gymmanager.viewmodel
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.si.gymmanager.common.Result
@@ -81,7 +80,7 @@ class ViewModel @Inject constructor(
                     is Result.success -> {
                         _allMembers.value = _allMembers.value.copy(
                             isLoading = false,
-                            members = result.data ?: emptyList(),
+                            members = result.data,
                         )
                     }
 
@@ -109,10 +108,6 @@ class ViewModel @Inject constructor(
         _addMember.value = AddMemberState()
     }
 
-    fun clearSyncStatus() {
-        _syncStatus.value = SyncState()
-    }
-
     val _totalRevenue = MutableStateFlow(TotalRevenueState())
     val totalRevenue = _totalRevenue.asStateFlow()
 
@@ -123,7 +118,7 @@ class ViewModel @Inject constructor(
                     is Result.success -> {
                         _totalRevenue.value = _totalRevenue.value.copy(
                             isLoading = false,
-                            isSuccess = result.data ?: 0,
+                            isSuccess = result.data,
                             error = ""
                         )
                     }
@@ -156,7 +151,7 @@ class ViewModel @Inject constructor(
                     is Result.success -> {
                         _revenueEntries.value = _revenueEntries.value.copy(
                             isLoading = false,
-                            isSuccess = result.data ?: emptyList(),
+                            isSuccess = result.data,
                             error = ""
                         )
                     }
@@ -189,7 +184,7 @@ class ViewModel @Inject constructor(
                     is Result.success -> {
                         _addRevenueEntry.value = _addRevenueEntry.value.copy(
                             isLoading = false,
-                            isSuccess = result.data.toString(),
+                            isSuccess = result.data,
                             error = ""
                         )
                     }
@@ -197,7 +192,7 @@ class ViewModel @Inject constructor(
                     is Result.error -> {
                         _addRevenueEntry.value = _addRevenueEntry.value.copy(
                             isLoading = false,
-                            error = result.message.toString(),
+                            error = result.message,
                             isSuccess = ""
                         )
                     }
@@ -224,13 +219,13 @@ class ViewModel @Inject constructor(
                     is Result.success -> {
                         _deleteMember.value = DeleteMemberState(
                             isLoading = false,
-                            isSuccess = it.data.toString(),
+                            isSuccess = it.data,
                         )
                     }
                     is Result.error -> {
                         _deleteMember.value = DeleteMemberState(
                             isLoading = false,
-                            error = it.message.toString(),
+                            error = it.message,
                         )
                     }
                     is Result.Loading -> {
@@ -259,7 +254,7 @@ class ViewModel @Inject constructor(
                     is Result.error -> {
                         _updateMember.value = UpdateMemberState(
                             isLoading = false,
-                            error = it.message.toString()
+                            error = it.message
                         )
                     }
                     is Result.Loading -> {
@@ -282,6 +277,10 @@ class ViewModel @Inject constructor(
 
     fun setSelectedMember(userDataModel: UserDataModel) {
         _selectedMember.value = userDataModel
+    }
+
+    fun clearSelectedMember() {
+        _selectedMember.value = UserDataModel()
     }
 
 }

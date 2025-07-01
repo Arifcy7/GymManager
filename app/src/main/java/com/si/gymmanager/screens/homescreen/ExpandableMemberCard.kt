@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,7 +30,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,13 +44,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import com.si.gymmanager.datamodels.UserDataModel
+import com.si.gymmanager.ui.theme.green
+import com.si.gymmanager.ui.theme.orange
 import com.si.gymmanager.ui.theme.primaryBlue
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -67,7 +67,7 @@ fun ExpandableMemberItem(
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val currentDate = Date()
     val endDate = try {
-        dateFormatter.parse(member.subscriptionEnd)
+        dateFormatter.parse(member.subscriptionEnd.toString())
     } catch (e: Exception) {
         null
     }
@@ -185,8 +185,8 @@ fun ExpandableMemberItem(
                             .background(
                                 when {
                                     isExpired -> Color.Red
-                                    daysRemaining != null && daysRemaining <= 7 -> Color(0xFFFF9800)
-                                    else -> Color(0xFF4CAF50)
+                                    daysRemaining != null && daysRemaining <= 7 -> orange
+                                    else -> green
                                 }
                             )
                     )
@@ -202,7 +202,7 @@ fun ExpandableMemberItem(
                 }
             }
 
-            // Expanded content (only visible when expanded)
+            // expanded content
             AnimatedVisibility(
                 visible = expanded,
                 enter = expandVertically(),
@@ -213,9 +213,9 @@ fun ExpandableMemberItem(
                         .fillMaxWidth()
                         .padding(top = 16.dp)
                 ) {
-                    Divider(
+                    HorizontalDivider(
                         modifier = Modifier.padding(vertical = 8.dp),
-                        color = Color.Gray.copy(alpha = 0.3f)
+                        thickness = DividerDefaults.Thickness, color = Color.Gray.copy(alpha = 0.3f)
                     )
 
                     Text(
@@ -243,8 +243,8 @@ fun ExpandableMemberItem(
                         colors = CardDefaults.cardColors(
                             containerColor = when {
                                 isExpired -> Color.Red.copy(alpha = 0.1f)
-                                daysRemaining != null && daysRemaining <= 7 -> Color(0xFFFF9800).copy(alpha = 0.1f)
-                                else -> Color(0xFF4CAF50).copy(alpha = 0.1f)
+                                daysRemaining != null && daysRemaining <= 7 -> orange.copy(alpha = 0.1f)
+                                else -> green.copy(alpha = 0.1f)
                             }
                         ),
                         shape = RoundedCornerShape(8.dp)
@@ -262,21 +262,21 @@ fun ExpandableMemberItem(
                             when {
                                 isExpired -> {
                                     Text(
-                                        text = "⚠️ Membership has expired. Please renew to continue access.",
+                                        text = "⚠️ Membership has expired.",
                                         fontSize = 12.sp,
                                         color = Color.Red
                                     )
                                 }
                                 daysRemaining != null && daysRemaining <= 7 -> {
                                     Text(
-                                        text = "⏰ Membership expires soon ($daysRemaining days remaining). Consider renewal.",
+                                        text = "⏰ Membership expires soon ($daysRemaining days remaining).",
                                         fontSize = 12.sp,
                                         color = Color(0xFFFF9800)
                                     )
                                 }
                                 else -> {
                                     Text(
-                                        text = "✅ Membership is active and in good standing.",
+                                        text = "✅ Membership is active and has {$daysRemaining} days remaining",
                                         fontSize = 12.sp,
                                         color = Color(0xFF4CAF50)
                                     )
@@ -285,7 +285,7 @@ fun ExpandableMemberItem(
                         }
                     }
 
-                    // Action buttons section
+                    // edit and delete button
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -308,7 +308,8 @@ fun ExpandableMemberItem(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "Edit",
-                                fontSize = 14.sp
+                                fontSize = 14.sp,
+                                color = Color.White
                             )
                         }
 
@@ -329,7 +330,8 @@ fun ExpandableMemberItem(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "Delete",
-                                fontSize = 14.sp
+                                fontSize = 14.sp,
+                                color = Color.White
                             )
                         }
                     }
@@ -338,7 +340,7 @@ fun ExpandableMemberItem(
         }
     }
 
-    // Delete Confirmation Dialog
+    // delete confirm dialog
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -353,13 +355,15 @@ fun ExpandableMemberItem(
             title = {
                 Text(
                     text = "Delete Member",
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
                 )
             },
             text = {
                 Text(
-                    text = "Are you sure you want to delete ${member.name}? This action cannot be undone.",
-                    fontSize = 14.sp
+                    text = "Are you sure you want to delete ${member.name}?",
+                    fontSize = 14.sp,
+                    color = Color.Black
                 )
             },
             confirmButton = {
@@ -372,7 +376,7 @@ fun ExpandableMemberItem(
                         containerColor = Color.Red
                     )
                 ) {
-                    Text("Delete")
+                    Text("Delete", color = Color.White)
                 }
             },
             dismissButton = {

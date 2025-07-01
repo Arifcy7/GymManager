@@ -15,9 +15,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.CurrencyRupee
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -54,7 +54,7 @@ fun RevenueEntriesSection(
 
         when {
             isLoading -> {
-                repeat(5) {
+                repeat(entries.size) {
                     RevenueEntryItemShimmer()
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -108,7 +108,7 @@ fun RevenueEntryItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = if (isIncome) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                    imageVector = if (isIncome) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                     contentDescription = if (isIncome) "Income" else "Expense",
                     tint = if (isIncome) Color.Green else Color.Red,
                     modifier = Modifier.size(24.dp)
@@ -224,7 +224,7 @@ fun EmptyRevenueState(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            imageVector = Icons.Default.TrendingUp,
+            imageVector = Icons.AutoMirrored.Filled.TrendingUp,
             contentDescription = "No Revenue",
             tint = Color.Gray,
             modifier = Modifier.size(64.dp)

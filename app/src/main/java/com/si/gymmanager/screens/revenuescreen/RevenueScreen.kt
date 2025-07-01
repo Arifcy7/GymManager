@@ -69,7 +69,7 @@ fun RevenueScreen(
     viewModel: ViewModel = hiltViewModel()
 ) {
     val totalRevenueState by viewModel.totalRevenue.collectAsState()
-    val revenueEntriesState by viewModel.revenueEntries.collectAsState()
+    val getRevenueEntriesState by viewModel.revenueEntries.collectAsState()
     val addRevenueEntryState by viewModel.addRevenueEntry.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
@@ -79,7 +79,7 @@ fun RevenueScreen(
         viewModel.getRevenueEntries()
     }
 
-    // handling add revenue entry success
+    // add revenue entry success
     LaunchedEffect(addRevenueEntryState.isSuccess) {
         if (addRevenueEntryState.isSuccess.isNotEmpty()) {
             showAddDialog = false
@@ -133,8 +133,8 @@ fun RevenueScreen(
 
             // revenue entries section
             RevenueEntriesSection(
-                entries = revenueEntriesState.isSuccess,
-                isLoading = revenueEntriesState.isLoading
+                entries = getRevenueEntriesState.isSuccess,
+                isLoading = getRevenueEntriesState.isLoading
             )
 
         }
@@ -238,7 +238,7 @@ fun AddRevenueEntryDialog(
                     )
                 )
 
-                // Type Dropdown
+                // dropdown
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded },
@@ -311,7 +311,7 @@ fun AddRevenueEntryDialog(
                     )
                 }
 
-                // Action Buttons
+                // Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)

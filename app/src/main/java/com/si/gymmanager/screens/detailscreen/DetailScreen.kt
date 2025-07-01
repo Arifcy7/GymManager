@@ -2,17 +2,10 @@
 
 package com.si.gymmanager.screens.detailscreen
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.net.Uri
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,14 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.CurrencyRupee
@@ -38,25 +26,16 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -69,35 +48,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
 import com.si.gymmanager.datamodels.UserDataModel
-import com.si.gymmanager.navigation.Routes
 import com.si.gymmanager.ui.theme.darkBlue
-import com.si.gymmanager.ui.theme.lightBlue
 import com.si.gymmanager.ui.theme.primaryBlue
 import com.si.gymmanager.utils.DatePickerField
 import com.si.gymmanager.utils.Utils
 import com.si.gymmanager.viewmodel.ViewModel
-import java.io.File
-import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,7 +75,7 @@ fun DetailScreen(
     val memberToEdit = viewModel.selectedMember.collectAsState().value
     val isEditMode = remember { memberToEdit.id?.isNotBlank() == true }
 
-    // Initialize form values based on mode
+    // form data
     var name by remember { mutableStateOf(memberToEdit.name ?: "") }
     var subscriptionStart by remember { mutableStateOf(memberToEdit.subscriptionStart ?: "") }
     var subscriptionEnd by remember { mutableStateOf(memberToEdit.subscriptionEnd ?: "") }
@@ -121,7 +88,7 @@ fun DetailScreen(
     val updateMemberState by viewModel.updateMember.collectAsState()
     val addMemberState by viewModel.addMember.collectAsState()
 
-    // Handle state updates
+    // manage update member state
     LaunchedEffect(updateMemberState) {
         if (updateMemberState.isSuccess.isNotEmpty()) {
             Toast.makeText(context, "Member Updated", Toast.LENGTH_LONG).show()
@@ -133,6 +100,7 @@ fun DetailScreen(
         }
     }
 
+    // manage add member state
     LaunchedEffect(addMemberState) {
         if (addMemberState.isSuccess.isNotEmpty()) {
             Toast.makeText(context, "Member Added", Toast.LENGTH_LONG).show()
@@ -140,7 +108,7 @@ fun DetailScreen(
             navController.popBackStack()
         }
         if (addMemberState.error.isNotEmpty()) {
-            Toast.makeText(context, "${addMemberState.error}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, addMemberState.error, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -155,10 +123,10 @@ fun DetailScreen(
     fun validateForm(): String? {
         return when {
             name.isBlank() || subscriptionStart.isBlank() || subscriptionEnd.isBlank()
-                    || amountPaid.isBlank() || aadhaarNumber.isBlank() || address.isBlank()
-                    || phone.isBlank() -> "Please fill all required fields"
+                    || amountPaid.isBlank() || aadhaarNumber.isBlank() ||
+                    address.isBlank() || phone.isBlank() -> "Please fill all required fields"
 
-            phone.length < 10 -> "Please enter a valid phone number"
+            phone.length < 10 -> "Enter 10 Digit Phone Number"
             else -> {
                 val startDate = Utils.parseDate(subscriptionStart)
                 val endDate = Utils.parseDate(subscriptionEnd)
@@ -196,7 +164,6 @@ fun DetailScreen(
         phone = ""
         showStartDatePicker = false
         showEndDatePicker = false
-
     }
 
     Scaffold(
@@ -216,6 +183,7 @@ fun DetailScreen(
                         contentDescription = "Back",
                         tint = Color.White,
                         modifier = Modifier.clickable {
+                            viewModel.clearSelectedMember()
                             navController.popBackStack()
                         }
                     )
@@ -355,6 +323,7 @@ fun DetailScreen(
 
                             if (isEditMode) {
                                 viewModel.updateMember(userDataModel)
+                                viewModel.clearSelectedMember()
                             } else {
                                 viewModel.addMember(userDataModel)
                             }
@@ -382,16 +351,16 @@ fun DetailScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         when {
-                            addMemberState.isLoading || updateMemberState.isLoading -> "Saving..."
-                            isEditMode -> "Update Member"
-                            else -> "Save Member"
+                            addMemberState.isLoading -> "Saving..."
+                            updateMemberState.isLoading -> "Updating..."
+                            isEditMode -> "Update"
+                            else -> "Save"
                         }
                     )
                 }
             }
         }
     }
-
 
 
     // Start Date Picker
@@ -433,62 +402,3 @@ fun DetailScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DetailFormField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    icon: ImageVector,
-    primaryColor: Color,
-    modifier: Modifier = Modifier,
-    keyboardType: KeyboardType = KeyboardType.Text,
-    placeholder: String = "",
-    singleLine: Boolean = true,
-    minLines: Int = 1
-) {
-    Column(
-        modifier = modifier.padding(vertical = 8.dp)
-    ) {
-        Text(
-            text = label,
-            color = primaryColor,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
-            leadingIcon = {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = primaryColor
-                )
-            },
-            placeholder = {
-                if (placeholder.isNotEmpty()) {
-                    Text(
-                        text = placeholder,
-                        color = Color.Gray
-                    )
-                }
-            },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = primaryColor,
-                unfocusedBorderColor = Color.Gray,
-                focusedLabelColor = primaryColor,
-                cursorColor = primaryColor,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black
-            ),
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            singleLine = singleLine,
-            minLines = minLines,
-            shape = RoundedCornerShape(8.dp)
-        )
-    }
-}
