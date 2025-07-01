@@ -45,9 +45,9 @@ class ViewModel @Inject constructor(
         }
     }
 
-    fun addMember(userDataModel: UserDataModel, imageUri: Uri? = null) {
+    fun addMember(userDataModel: UserDataModel) {
         viewModelScope.launch {
-            repository.addMembersDetails(userDataModel, imageUri).collect { result ->
+            repository.addMembersDetails(userDataModel).collect { result ->
                 when (result) {
                     is Result.success -> {
                         _addMember.value = AddMemberState(
@@ -270,6 +270,10 @@ class ViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun resetUpdateMemberState() {
+        _updateMember.value = UpdateMemberState()
     }
 
     // passing userdatamodel for navigation

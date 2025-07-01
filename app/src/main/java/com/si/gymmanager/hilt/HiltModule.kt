@@ -23,11 +23,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object HiltModule {
 
-    @Provides
-    @Singleton
-    fun providePref(@ApplicationContext context: Context): PreferenceManager {
-        return PreferenceManager(context)
-    }
 
     @Provides
     @Singleton
@@ -41,11 +36,6 @@ object HiltModule {
         return FirebaseFirestore.getInstance()
     }
 
-    @Provides
-    @Singleton
-    fun provideFirebaseStorage(): FirebaseStorage {
-        return FirebaseStorage.getInstance()
-    }
 
     @Provides
     @Singleton
@@ -79,15 +69,11 @@ object HiltModule {
     fun provideRepo(
         firebaseDatabase: FirebaseDatabase,
         firebaseFirestore: FirebaseFirestore,
-        firebaseStorage: FirebaseStorage,
-        preferenceManager: PreferenceManager,
         databaseManager: DatabaseManager
     ): Repository {
         return Repository(
             firebaseDatabase,
             firebaseFirestore,
-            firebaseStorage,
-            preferenceManager,
             databaseManager
         )
     }

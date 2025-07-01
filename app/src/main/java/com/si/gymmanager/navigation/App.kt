@@ -15,7 +15,10 @@ import com.si.gymmanager.viewmodel.ViewModel
 fun App() {
 
     val navController = rememberNavController()
+
     val viewModel: ViewModel = hiltViewModel()
+
+    //navigation setups
     NavHost(navController, startDestination = Routes.HomeScreen) {
         composable<Routes.HomeScreen>(
             enterTransition = NavigationTransitionUtil.enterSlideTransition(),

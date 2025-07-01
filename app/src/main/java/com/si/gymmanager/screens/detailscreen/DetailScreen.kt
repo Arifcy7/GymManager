@@ -124,7 +124,8 @@ fun DetailScreen(
     // Handle state updates
     LaunchedEffect(updateMemberState) {
         if (updateMemberState.isSuccess.isNotEmpty()) {
-            Toast.makeText(context, updateMemberState.isSuccess, Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Member Updated", Toast.LENGTH_LONG).show()
+            viewModel.resetUpdateMemberState()
             navController.popBackStack()
         }
         if (updateMemberState.error.isNotEmpty()) {
@@ -134,12 +135,12 @@ fun DetailScreen(
 
     LaunchedEffect(addMemberState) {
         if (addMemberState.isSuccess.isNotEmpty()) {
-            Toast.makeText(context, addMemberState.isSuccess, Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Member Added", Toast.LENGTH_LONG).show()
             viewModel.clearAddMemberState()
             navController.popBackStack()
         }
         if (addMemberState.error.isNotEmpty()) {
-            Toast.makeText(context, "Error: ${addMemberState.error}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "${addMemberState.error}", Toast.LENGTH_LONG).show()
         }
     }
 
