@@ -1,4 +1,4 @@
-package com.si.gymmanager.preference
+package com.si.gymmanager.roomdb
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

@@ -10,7 +10,7 @@ import com.google.firebase.firestore.Query
 import com.si.gymmanager.common.Result
 import com.si.gymmanager.datamodels.RevenueEntry
 import com.si.gymmanager.datamodels.UserDataModel
-import com.si.gymmanager.preference.DatabaseManager
+import com.si.gymmanager.roomdb.DatabaseManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose

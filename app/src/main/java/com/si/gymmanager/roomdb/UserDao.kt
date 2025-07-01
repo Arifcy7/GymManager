@@ -1,4 +1,4 @@
-package com.si.gymmanager.preference
+package com.si.gymmanager.roomdb
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow

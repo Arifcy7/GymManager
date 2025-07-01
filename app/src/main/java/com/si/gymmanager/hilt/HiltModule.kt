@@ -4,12 +4,10 @@ import android.content.Context
 import androidx.room.Room
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
-import com.si.gymmanager.preference.AppMetadataDao
-import com.si.gymmanager.preference.DatabaseManager
-import com.si.gymmanager.preference.GymDatabase
-import com.si.gymmanager.preference.PreferenceManager
-import com.si.gymmanager.preference.UserDao
+import com.si.gymmanager.roomdb.AppMetadataDao
+import com.si.gymmanager.roomdb.DatabaseManager
+import com.si.gymmanager.roomdb.GymDatabase
+import com.si.gymmanager.roomdb.UserDao
 import com.si.gymmanager.repository.Repository
 import dagger.Module
 import dagger.Provides

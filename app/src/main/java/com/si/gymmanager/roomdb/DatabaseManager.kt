@@ -1,4 +1,4 @@
-package com.si.gymmanager.preference
+package com.si.gymmanager.roomdb
 
 import com.si.gymmanager.datamodels.UserDataModel
 import kotlinx.coroutines.flow.Flow
