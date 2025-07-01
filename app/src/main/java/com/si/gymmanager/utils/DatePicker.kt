@@ -69,7 +69,7 @@ fun DatePickerField(
                     Text(
                         text = "DD/MM/YYYY",
                         color = Color.Gray,
-                        fontSize = 12.sp
+                        fontSize = 10.sp
                     )
                 },
                 colors = OutlinedTextFieldDefaults.colors(
@@ -83,7 +83,7 @@ fun DatePickerField(
                     disabledBorderColor = Color.Gray
                 ),
                 textStyle = LocalTextStyle.current.copy(
-                    fontSize = 12.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Normal
                 ),
                 readOnly = true,
