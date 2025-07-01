@@ -50,9 +50,7 @@ class Repository @Inject constructor(
                 trySend(Result.error("Failed to add revenue entry: ${exception.message}"))
             }
 
-        awaitClose {
-            close()
-        }
+        awaitClose {}
     }
 
 
@@ -97,8 +95,7 @@ class Repository @Inject constructor(
                                                 close()
                                             }
 
-                                            else -> { /* Loading state - ignore */
-                                            }
+                                            else -> {}
                                         }
                                     }
                                 }
@@ -114,9 +111,7 @@ class Repository @Inject constructor(
             } catch (e: Exception) {
                 trySend(Result.error("Failed to add member: ${e.message}"))
             }
-            awaitClose {
-                close()
-            }
+            awaitClose {}
         }
 
     // delete member from firestore using member id
@@ -133,9 +128,7 @@ class Repository @Inject constructor(
             .addOnFailureListener { exception ->
                 trySend(Result.error("Failed to delete member: ${exception.message}"))
             }
-        awaitClose {
-            close()
-        }
+        awaitClose {}
     }
 
     // get total revenue from realtime database
@@ -269,9 +262,7 @@ class Repository @Inject constructor(
             trySend(Result.error("Unexpected error: ${e.message}"))
         }
 
-        awaitClose {
-            close()
-        }
+        awaitClose {}
     }
 
     // get cached members
@@ -306,9 +297,7 @@ class Repository @Inject constructor(
             trySend(Result.error("Unexpected error: ${e.message}"))
             close()
         }
-        awaitClose {
-            close()
-        }
+        awaitClose {}
     }
 
 
