@@ -21,11 +21,11 @@ class DatabaseManager @Inject constructor(
         userDao.insertUsers(users.toEntities())
     }
 
-    // Fixed: Now properly returns cached users using first() to get the latest emission
+    // return fetched data
     suspend fun getCachedMembers(): List<UserDataModel> {
         return userDao.getAllUsers().map { entities ->
             entities.toDataModels()
-        }.first() // This gets the first emission from the Flow
+        }.first()
     }
 
     fun getCachedMembersFlow(): Flow<List<UserDataModel>> {
