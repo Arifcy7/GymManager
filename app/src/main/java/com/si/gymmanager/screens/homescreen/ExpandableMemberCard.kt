@@ -86,7 +86,6 @@ fun ExpandableMemberItem(
             containerColor = Color.White
         ),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (expanded) 8.dp else 4.dp)
     ) {
         Column(
             modifier = Modifier
@@ -276,7 +275,7 @@ fun ExpandableMemberItem(
                                 }
                                 else -> {
                                     Text(
-                                        text = "✅ Membership is active and has {$daysRemaining} days remaining",
+                                        text = "✅ Membership is active and has $daysRemaining days remaining",
                                         fontSize = 12.sp,
                                         color = Color(0xFF4CAF50)
                                     )
